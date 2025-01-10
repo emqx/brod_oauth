@@ -29,7 +29,7 @@
     end
 ).
 
--spec auth(brod_oauth:state()) -> {ok, map()} | {error, Reason :: term()}.
+-spec auth(brod_oauth:state()) -> {ok, Result :: term()} | {error, Reason :: term()}.
 auth(State) ->
     case auth_begin(State) of
         ok ->
@@ -42,7 +42,7 @@ auth(State) ->
 %% Internal functions
 %%====================================================================
 
--spec auth_begin(State :: brod_oauth:state()) -> {ok, term()} | {error, term()}.
+-spec auth_begin(State :: brod_oauth:state()) -> ok | {error, term()}.
 auth_begin(#{debug := Debug} = State) ->
     ?DBG(Debug, "Attempting sasl handshake..."),
     case handshake(State) of
@@ -75,7 +75,7 @@ auth_continue(#{token_callback := TokenCB, debug := Debug} = State) ->
             case send_sasl_token(State, TokenProps) of
                 {ok, _} = Res ->
                     ?DBG(Debug, "Successfully authenticated."),
-                    set_sock_opts(State, [{active, once}]),
+                    _ = set_sock_opts(State, [{active, once}]),
                     Res;
                 Error ->
                     Error
@@ -83,8 +83,6 @@ auth_continue(#{token_callback := TokenCB, debug := Debug} = State) ->
         Err ->
             Err
     end.
-
--define(DEFAULT_AUTH_PROPS, #{authz_id => <<"">>, extensions => #{}}).
 
 do_get_token_props(State, Callback, CallbackData, Debug) ->
     try Callback(CallbackData) of
@@ -112,8 +110,8 @@ validate_auth_props(_, _, Debug) ->
 
 set_defaults(State, #{token := Token}) ->
     #{
-        authz_id => maps:get(authz_id, State, <<"">>),
-        extensions => maps:get(extensions, State, #{}),
+        authz_id => maps:get(authz_id, State),
+        extensions => maps:get(extensions, State),
         token => Token
     }.
 
@@ -144,8 +142,8 @@ handshake(State) ->
         Other ->
             {error, Other}
     end.
--spec send_sasl_token(State :: brod_oauth:state(), Challenge :: binary()) ->
-    {ok, binary()} | {error, term()}.
+-spec send_sasl_token(State :: brod_oauth:state(), TokenProps :: map()) ->
+    {ok, term()} | {error, term()}.
 send_sasl_token(State, TokenProps) ->
     #{handshake_vsn := HandshakeVsn, timeout := Timeout} = State,
     #{sock := Sock, transport_mod := Mod, client_id := ClientId} = State,
