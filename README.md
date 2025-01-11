@@ -52,7 +52,7 @@ Optional keys :
 
 #### Examples
 
-Note : While the the examples below demonstrate providing `extensions` in configuration, it is not a
+Note : While the examples below demonstrate providing `extensions` in configuration, it is not a
 required parameter, and not all setups require extensions to be provided. Such is the case with
 `authz_id` as well.
 

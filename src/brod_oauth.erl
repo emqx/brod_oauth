@@ -7,16 +7,20 @@
 -export([auth/7, new/7]).
 
 -type state() :: #{
+    debug => boolean(),
     host := binary(),
     sock := gen_tcp:socket() | ssl:sslsocket(),
     transport_mod := gen_tcp | ssl,
     client_id := binary(),
     timeout := pos_integer(),
-    method := any(),
-    handshake_vsn := non_neg_integer() | legacy
+    handshake_vsn := non_neg_integer() | legacy,
+    token_callback := fun(),
+    extensions => map(),
+    authz_id => binary()
 }.
 
 -export_type([state/0]).
+
 
 -spec auth(
     Host :: string(),
@@ -26,7 +30,7 @@
     ClientId :: binary(),
     Timeout :: pos_integer(),
     OauthOpts :: map()
-) -> ok | {error, Reason :: term()}.
+) -> {ok, Result :: term()} | {error, Reason :: term()}.
 auth(
     Host,
     Sock,
@@ -66,7 +70,9 @@ new(Host, Sock, HandshakeVsn, Mod, ClientId, Timeout, #{token_callback := OAuthC
         client_id => ClientId,
         timeout => Timeout,
         handshake_vsn => HandshakeVsn,
-        token_callback => OAuthCB
+        token_callback => OAuthCB,
+        authz_id => maps:get(authz_id, Cfg, <<"">>),
+        extensions => maps:get(extensions, Cfg, #{})
     }.
 
 -spec ensure_binary(atom() | iodata()) -> binary().
@@ -78,5 +84,5 @@ ensure_binary(Bin) when is_binary(Bin) ->
     Bin.
 
 init() ->
-    application:load(brod_oauth),
+    _ = application:load(brod_oauth),
     ok.
